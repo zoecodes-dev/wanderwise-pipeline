@@ -1,0 +1,28 @@
+# 비밀키 — 이미지에 절대 굽지 않음 (변수는 Railway env로 주입)
+.env
+.env.*
+
+# 가상환경 / 캐시 (용량 큼, 불필요)
+.venv
+venv
+env
+__pycache__
+*.py[cod]
+.pytest_cache
+.coverage
+htmlcov
+
+# 파이프라인 중간 산출물 — 런타임 불필요 (장소는 Supabase 조회)
+data/*.json
+
+# git / IDE / OS
+.git
+.github
+.vscode
+.idea
+.DS_Store
+
+# 잡다
+*.zip
+report.md
+api_plan.md
