@@ -161,6 +161,10 @@ generation:
   model: claude-sonnet-4-6   # 비용 아끼려면 claude-haiku-4-5-20251001
   batch_size: 10             # 한 번에 묶어 보낼 장소 수
 
+# 요청당 동선 구성 방식
+itinerary:
+  planner: deterministic     # deterministic(요청당 LLM 0, 코드로 선택·순서·시간) | llm(Claude 사용)
+
 embedding:
   provider: openai           # openai | voyage
   model: text-embedding-3-small
