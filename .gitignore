@@ -1,0 +1,33 @@
+# 환경 변수 / 비밀키 (절대 커밋 금지)
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+build/
+dist/
+
+# 가상환경
+.venv/
+venv/
+env/
+
+# 파이프라인 중간 산출물 (재실행으로 재생성됨)
+data/*.json
+
+# 테스트 / 커버리지
+.pytest_cache/
+.coverage
+htmlcov/
+
+# IDE
+.vscode/
+.idea/
+
+# macOS
+.DS_Store

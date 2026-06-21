@@ -1,0 +1,167 @@
+city: seoul
+country: KR
+language: ko
+target_count: 100          # 이 도시에서 approved 상태로 유지하고 싶은 목표 개수
+collector: kakao           # kakao | google
+enrich_with_google: true   # 리뷰수 필터·영업시간 검증에 필요 (GOOGLE_API_KEY)
+
+# WanderWise의 무드 카테고리 — 앱의 10개 카테고리와 정확히 일치시켜 주세요.
+# generate 단계에서 enum으로 강제됩니다.
+moods:
+  - nostalgic        # 향수, 레트로
+  - contemplative    # 사색, 고요
+  - adventurous      # 모험, 골목 탐험
+  - romantic         # 낭만
+  - foodie           # 미식
+  - artistic         # 예술, 창작
+  - nature           # 자연, 숨 돌리기
+  - hidden           # 숨은 보석
+  - energetic        # 활기, 시장
+  - melancholy       # 쓸쓸함, 비 오는 날
+
+categories:
+  - 카페
+  - 독립서점
+  - 갤러리
+  - 전망
+  - 시장
+  - 공원
+  - 바
+  - 공방
+  - 베이커리
+  - 노포
+
+# query_alias: 행정동명보다 실제 상권 명칭으로 검색해야 분위기가 맞는 장소가 잡힘
+neighborhoods:
+  - name: 신당동
+    query_alias: [힙당동, 싸전거리, 황학동, 서울중앙시장]
+    moods: [nostalgic, adventurous, foodie, energetic]
+    center: {lat: 37.5657, lng: 127.0202}
+  - name: 서순라길
+    query_alias: [서순라길, 종로3가 돌담길, 익선동]
+    moods: [nostalgic, artistic, romantic]
+    center: {lat: 37.5724, lng: 126.9942}
+  - name: 창신동
+    query_alias: [창신동, 채석장전망대, 창신동 봉제거리]
+    moods: [hidden, contemplative, adventurous]
+    center: {lat: 37.5764, lng: 127.0136}
+  - name: 문래동
+    query_alias: [문래창작촌, 문래동 철공소골목]
+    moods: [artistic, adventurous, hidden]
+    center: {lat: 37.5172, lng: 126.8950}
+  - name: 성수동
+    query_alias: [뚝도시장, 송정동, 성수동 골목]
+    moods: [artistic, foodie, energetic]
+    center: {lat: 37.5446, lng: 127.0559}
+  - name: 후암동
+    query_alias: [후암동, 해방촌, 신흥시장]
+    moods: [contemplative, hidden, nostalgic]
+    center: {lat: 37.5475, lng: 126.9810}
+  - name: 부암동
+    query_alias: [부암동, 백사실계곡, 석파정]
+    moods: [nature, contemplative, romantic]
+    center: {lat: 37.5953, lng: 126.9650}
+  - name: 성북동
+    query_alias: [성북동, 길상사, 성북동 골목]
+    moods: [contemplative, nostalgic, romantic]
+    center: {lat: 37.5934, lng: 126.9986}
+  - name: 연희동
+    query_alias: [연희동, 연희동 골목, 사러가쇼핑센터]
+    moods: [contemplative, hidden, foodie]
+    center: {lat: 37.5686, lng: 126.9300}
+  - name: 용리단길
+    query_alias: [용리단길, 신용산, 용문시장]
+    moods: [foodie, energetic, nostalgic]
+    center: {lat: 37.5298, lng: 126.9648}
+  - name: 도화동
+    query_alias: [도화동, 용강동, 마포 먹자골목]
+    moods: [foodie, nostalgic]
+    center: {lat: 37.5404, lng: 126.9508}
+  - name: 샤로수길
+    query_alias: [샤로수길, 서울대입구 골목]
+    moods: [foodie, hidden, energetic]
+    center: {lat: 37.4790, lng: 126.9554}
+  - name: 송리단길
+    query_alias: [송리단길, 석촌호수]
+    moods: [romantic, foodie, nature]
+    center: {lat: 37.5048, lng: 127.1066}
+  - name: 망원동
+    query_alias: [망원시장, 망리단길]
+    moods: [energetic, foodie, nostalgic]
+    center: {lat: 37.5556, lng: 126.9019}
+  - name: 약수동
+    query_alias: [약수동, 금호동, 약수시장]
+    moods: [hidden, nostalgic, foodie]
+    center: {lat: 37.5546, lng: 127.0107}
+  - name: 연남동
+    query_alias: [연남동, 경의선숲길, 동진시장]
+    moods: [romantic, artistic, energetic]
+    center: {lat: 37.5621, lng: 126.9255}
+
+filters:
+  min_rating: 3.8            # enrich_with_google=true일 때만 적용
+  min_reviews: 10            # 숨은 곳을 살리되, 너무 적으면(검증불가) 제외
+  max_reviews: 3000          # 초유명(어니언·광장시장 등)은 serendipity가 아님
+  chain_min_neighborhoods: 3 # 같은 이름이 N개 동네에 깔리면 체인으로 자동 제외
+  search_radius_m: 700       # 동네 중심에서 검색 반경
+  franchise_blacklist:
+    - 스타벅스
+    - 투썸플레이스
+    - 이디야
+    - 메가커피
+    - 메가MGC
+    - 컴포즈커피
+    - 빽다방
+    - 파리바게뜨
+    - 뚜레쥬르
+    - 할리스
+    - 공차
+    - 설빙
+    - 폴바셋
+    - 배스킨라빈스
+    - 던킨
+    - 하삼동
+    - 매머드
+    - 더벤티
+    - 컴포즈
+    - 와플대학
+    - 코코호도
+    - 브레댄코
+    - 청수당
+    - CU
+    - GS25
+    - 세븐일레븐
+    - 이마트24
+    - 올리브영
+    - 다이소
+  category_blacklist:        # 카카오 category_name에 포함되면 제외
+    - 모텔
+    - 호텔
+    - 병원
+    - 약국
+    - 부동산
+    - 학원
+    - 은행
+    - 주차장
+    - 편의점
+    - 미용
+    - 헤어
+    - 네일
+    - 통신
+    - 휴대폰
+    - 세탁
+    - 빨래방
+    - 마트
+    - 슈퍼
+    - 다이소
+    - 공공기관
+    - 주민센터
+
+generation:
+  model: claude-sonnet-4-6   # 비용 아끼려면 claude-haiku-4-5-20251001
+  batch_size: 10             # 한 번에 묶어 보낼 장소 수
+
+embedding:
+  provider: openai           # openai | voyage
+  model: text-embedding-3-small
+  dimensions: 1536
