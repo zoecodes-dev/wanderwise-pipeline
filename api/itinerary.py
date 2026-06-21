@@ -36,8 +36,45 @@ SYSTEM = """당신은 여행 앱 WanderWise의 동선 설계자입니다. Wander
 - direction: 장소 이름을 노출하지 않는 러프한 방향 문구(예: "지하철역에서 북쪽으로 5분"). 정확하지 않아도 됨.
 - candidates의 rank는 무드 유사도의 '상대 순위'입니다(1이 가장 유사). 유사도 점수의 절대값으로 컷하지 말고, 순위와 동선 적합성으로 고르세요.
 
-반드시 아래 JSON만 반환하세요. 마크다운 코드펜스·설명·인사 금지.
-{{"summary": "동선 전체를 한 문장으로", "stops": [{{"order": 1, "place_id": "...", "arrive_time": "10:00", "stay_minutes": 60, "transport_from_prev": {{"mode": "walk", "minutes": 0}}, "direction": "..."}}]}}"""
+구성한 동선은 반드시 emit_itinerary 도구를 호출해 반환하세요. 도구 인자 형식을 그대로 따르고, place_id는 후보 목록에 있는 값만 사용하세요. {stops}개를 고르세요."""
+
+# structured output 강제 — 텍스트 JSON 파싱 대신 tool use로 스키마를 강제해 파싱 깨짐을 원천 차단.
+ITINERARY_TOOL = {
+    "name": "emit_itinerary",
+    "description": "구성한 하루 동선을 반환한다. place_id는 후보 목록의 값만 사용.",
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "summary": {"type": "string", "description": "동선 전체를 한 문장으로"},
+            "stops": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "order": {"type": "integer"},
+                        "place_id": {"type": "string", "description": "후보 목록의 place_id"},
+                        "arrive_time": {"type": "string", "description": "HH:MM"},
+                        "stay_minutes": {"type": "integer"},
+                        "transport_from_prev": {
+                            "type": "object",
+                            "properties": {
+                                "mode": {"type": "string",
+                                         "enum": ["walk", "transit", "taxi", "start"]},
+                                "minutes": {"type": "integer"},
+                            },
+                            "required": ["mode", "minutes"],
+                        },
+                        "direction": {"type": "string",
+                                      "description": "이름을 노출하지 않는 러프한 방향 문구"},
+                    },
+                    "required": ["order", "place_id", "arrive_time",
+                                 "stay_minutes", "transport_from_prev", "direction"],
+                },
+            },
+        },
+        "required": ["summary", "stops"],
+    },
+}
 
 
 def _build_prompt(mood: str, candidates: list[dict], stops: int, start_time: str) -> str:
@@ -63,16 +100,19 @@ def _build_prompt(mood: str, candidates: list[dict], stops: int, start_time: str
     )
 
 
-def _parse(text: str, valid_ids: set[str]) -> dict | None:
-    clean = text.strip().removeprefix("```json").removeprefix("```").removesuffix("```").strip()
-    data = json.loads(clean)
-    stops = data.get("stops")
-    if not isinstance(stops, list) or not stops:
-        return None
-    # 후보에 실재하는 place_id가 하나도 없으면 환각으로 보고 무효
-    if not any(s.get("place_id") in valid_ids for s in stops):
-        return None
-    return data
+def _extract_plan(resp, valid_ids: set[str]) -> dict | None:
+    """tool_use 블록에서 동선을 꺼낸다. 스키마는 API가 강제하므로 환각 place_id만 검증."""
+    for block in resp.content:
+        if getattr(block, "type", None) == "tool_use" and block.name == "emit_itinerary":
+            data = block.input
+            stops = data.get("stops")
+            if not isinstance(stops, list) or not stops:
+                return None
+            # 후보에 실재하는 place_id가 하나도 없으면 환각으로 보고 무효
+            if not any(s.get("place_id") in valid_ids for s in stops):
+                return None
+            return data
+    return None
 
 
 def _plan_with_claude(cfg: dict, mood: str, candidates: list[dict],
@@ -83,16 +123,18 @@ def _plan_with_claude(cfg: dict, mood: str, candidates: list[dict],
     user = _build_prompt(mood, candidates, stops, start_time)
     valid_ids = {c["id"] for c in candidates}
 
-    for attempt in (1, 2):  # 파싱 실패 시 1회 재시도
+    for attempt in (1, 2):  # tool use로 JSON은 강제되지만 API 오류는 1회 재시도
         try:
             resp = client.messages.create(
                 model=model, max_tokens=2048, system=system,
+                tools=[ITINERARY_TOOL],
+                tool_choice={"type": "tool", "name": "emit_itinerary"},
                 messages=[{"role": "user", "content": user}],
             )
-            plan = _parse(resp.content[0].text, valid_ids)
+            plan = _extract_plan(resp, valid_ids)
             if plan:
                 return plan
-            print(f"  [itinerary] attempt {attempt}: 유효한 동선 JSON 아님")
+            print(f"  [itinerary] attempt {attempt}: 도구 출력에 유효한 동선 없음")
         except Exception as e:
             print(f"  [itinerary] attempt {attempt} 오류: {e}")
     return None
