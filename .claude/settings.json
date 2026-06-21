@@ -4,7 +4,8 @@
       "Bash(git init *)",
       "Bash(git add *)",
       "Bash(git commit -q -m '필터 강화 작업 지점 *)",
-      "Bash(grep -E '\\(^|/\\)\\\\.env$|^data/')"
+      "Bash(grep -E '\\(^|/\\)\\\\.env$|^data/')",
+      "Bash(git commit -q -m '필터 강화 + 서울 100곳 생성·임베딩 완료 *)"
     ]
   }
 }
