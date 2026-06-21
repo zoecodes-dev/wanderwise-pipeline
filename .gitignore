@@ -29,5 +29,8 @@ htmlcov/
 .vscode/
 .idea/
 
+# Claude Code 로컬 설정 (세션별 권한 부여 등 — 공유 불필요)
+.claude/
+
 # macOS
 .DS_Store
