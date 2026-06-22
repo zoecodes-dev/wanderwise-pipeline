@@ -329,31 +329,58 @@ def _join(plan: dict, candidates: list[dict]) -> dict:
     return {"summary": plan.get("summary"), "stops": out}
 
 
+def _focus_neighborhood(candidates: list[dict], stops: int) -> list[dict]:
+    """동선을 한 동네 안으로 묶는다. 가깝고(거리) 무드 유사도 높고(순위) 후보가 충분한
+    동네를 골라 그 동네 후보만 반환. 어떤 동네도 stops개+카테고리 다양성을 못 채우면
+    전체를 그대로 반환(인접 동네 섞임 허용)."""
+    by_hood: dict[str, list[dict]] = {}
+    for c in candidates:
+        by_hood.setdefault(c["neighborhood"], []).append(c)
+
+    def eligible(cs: list[dict]) -> bool:
+        cats = {c["category"] for c in cs}
+        return len(cs) >= stops and len(cats) >= min(stops, 3)
+
+    # 동네 점수: 유사도 상위(앞 순위)일수록 + 가까울수록 높게
+    score: dict[str, float] = {}
+    for i, c in enumerate(candidates):
+        score[c["neighborhood"]] = score.get(c["neighborhood"], 0.0) + \
+            (1.0 / (i + 1)) * (1000.0 / (1000.0 + c.get("distance_m", 0.0)))
+
+    qualified = [h for h, cs in by_hood.items() if eligible(cs)]
+    if not qualified:
+        return candidates
+    best = max(qualified, key=lambda h: score[h])
+    return by_hood[best]
+
+
 def build_itinerary(cfg: dict, mood: str, lat: float, lng: float, *,
                     city: str = "seoul", max_distance_m: float = 5000,
                     stops: int = 4, start_time: str = "10:00") -> dict:
-    """무드 → 후보 추출 → Claude 동선 → join → 응답(reveal 분리)."""
+    """무드 → 후보 추출 → 한 동네로 좁힘 → 동선 구성 → join → 응답(reveal 분리)."""
     candidates = find_candidates(cfg, mood, lat, lng, city=city,
                                  max_distance_m=max_distance_m, stops=stops)
     if not candidates:
         return {"mood": mood, "summary": None, "stops": [],
                 "error": "no_candidates", "fallback": False}
 
-    stops = min(stops, len(candidates))  # 후보가 적으면 자동 축소
+    focus = _focus_neighborhood(candidates, stops)  # 한 동네로 좁힘(불가하면 전체)
+    stops = min(stops, len(focus))  # 후보가 적으면 자동 축소
 
     # 기본은 결정적 플래너(요청당 LLM 0). config에서 itinerary.planner: llm 으로 두면 Claude 사용.
     planner = (cfg.get("itinerary") or {}).get("planner", "deterministic")
     fellback = False
     if planner == "llm":
-        plan = _plan_with_claude(cfg, mood, candidates, stops, start_time)
+        plan = _plan_with_claude(cfg, mood, focus, stops, start_time)
         if plan is None:  # LLM 실패 시 결정적으로 폴백
-            plan = _plan_deterministic(candidates, stops, start_time, lat, lng)
+            plan = _plan_deterministic(focus, stops, start_time, lat, lng)
             fellback = True
     else:
-        plan = _plan_deterministic(candidates, stops, start_time, lat, lng)
+        plan = _plan_deterministic(focus, stops, start_time, lat, lng)
 
-    resp = _join(plan, candidates)
+    resp = _join(plan, focus)
     resp["mood"] = mood
     resp["fallback"] = fellback
-    resp["candidate_count"] = len(candidates)
+    resp["candidate_count"] = len(focus)
+    resp["neighborhood"] = focus[0]["neighborhood"] if focus else None
     return resp

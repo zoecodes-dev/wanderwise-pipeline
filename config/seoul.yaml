@@ -1,7 +1,7 @@
 city: seoul
 country: KR
 language: ko
-target_count: 100          # 이 도시에서 approved 상태로 유지하고 싶은 목표 개수
+target_count: 380          # 재실행 시 기존 제외 후 '신규 추가' 상한 (총 ≈ 기존100 + 380 ≈ 480, 동네당 ~32)
 collector: kakao           # kakao | google
 enrich_with_google: true   # 리뷰수 필터·영업시간 검증에 필요 (GOOGLE_API_KEY)
 
