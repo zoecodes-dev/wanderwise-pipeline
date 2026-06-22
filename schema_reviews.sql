@@ -20,12 +20,15 @@ drop policy if exists "본인 프로필 수정" on profiles;
 create policy "본인 프로필 수정" on profiles for update using (auth.uid() = id);
 
 -- 가입 시 프로필 자동 생성 (닉네임은 메타데이터, 없으면 이메일 앞부분)
-create or replace function handle_new_user() returns trigger as $$
+-- security definer 실행 컨텍스트에선 search_path에 public이 없을 수 있어 명시 + 스키마 한정 필수.
+-- (안 하면 가입이 "Database error saving new user"로 실패)
+create or replace function handle_new_user() returns trigger
+language plpgsql security definer set search_path = public as $$
 begin
-  insert into profiles (id, display_name)
+  insert into public.profiles (id, display_name)
   values (new.id, coalesce(new.raw_user_meta_data->>'display_name', split_part(new.email, '@', 1)));
   return new;
-end; $$ language plpgsql security definer;
+end; $$;
 
 drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_created
