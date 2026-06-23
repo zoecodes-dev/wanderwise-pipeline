@@ -80,7 +80,7 @@
 
 ### 핵심 쿼리 — 분위기와 거리를 한 번에
 
-`match_places()`(schema.sql)가 **pgvector 유사도 + PostGIS 거리 필터**를 단일 SQL로 처리합니다. 후처리 없이 "이 근처에서 이 무드에 맞는 곳"이 정렬되어 나옵니다.
+`match_places()`(db/schema.sql)가 **pgvector 유사도 + PostGIS 거리 필터**를 단일 SQL로 처리합니다. 후처리 없이 "이 근처에서 이 무드에 맞는 곳"이 정렬되어 나옵니다.
 
 ```sql
 order by p.embedding <=> query_embedding        -- 무드 유사도
@@ -115,7 +115,7 @@ FastAPI · Supabase(PostgreSQL + PostGIS + pgvector) · Claude API · OpenAI 임
 ```bash
 pip install -r requirements.txt
 cp .env.example .env        # 키 채우기 (Supabase / Anthropic / OpenAI / Kakao)
-# Supabase SQL Editor에서 schema.sql 실행 (places 테이블 + match_places 함수)
+# Supabase SQL Editor에서 db/schema.sql 실행 (places 테이블 + match_places 함수)
 
 # 데이터 파이프라인
 python run_pipeline.py config/seoul.yaml --dry-run   # 적재 없이 점검
@@ -155,6 +155,7 @@ update places set status='rejected' where id in ('...');       -- 개별 반려
 - **동네 좌표 자동 지오코딩.** 상권 중심 좌표를 손으로 찍지 않고 카카오 검색 결과의 중앙값으로 잡아, 좌표 오류와 수작업을 줄였습니다. (`scripts/geocode_neighborhoods.py`)
 - **무료 신호 우선, 유료 보강은 예산 캡.** 구조적 필터(프랜차이즈·체인·부속시설)와 LLM 품질 게이트로 후보를 먼저 거른 뒤, 평점·영업시간 같은 유료(Google) 보강은 **고정 호출 예산 안에서** 음식·술 카테고리를 우선해 채웠습니다. 소멸성 크레딧을 넘기지 않도록 하드 캡을 두었습니다. (`scripts/enrich_capped.py`)
 - **검수 게이트 유지.** 새로 생성한 장소는 여전히 `pending`으로 적재되고, 사람이 검수해 `approved`로 올립니다. 규모가 커진 만큼 동네별로 훑어보고 일괄 승인하는 방식으로 운영합니다.
+- **시장·공원은 "거기서 뭘 할지"까지 미리 채웁니다.** 시장·공원처럼 그냥 데려다 놓으면 무엇을 할지 막막한 장소는, 빌드 시점에 한 번 검색해 `things_to_do`(즐기는 법)를 생성해 DB에 저장합니다. 요청 시점에는 검색 없이 저장된 값을 읽기만 하므로, 비용과 안정성을 지키면서도 안내가 구체적입니다.
 
 ---
 

@@ -322,6 +322,7 @@ def _join(plan: dict, candidates: list[dict]) -> dict:
             "reveal": {
                 "display_name": display_names.get(pid) or c.get("name"),
                 "reveal_text": c["reveal_text"],
+                "things_to_do": c.get("things_to_do"),   # 시장·공원 등: 여기서 뭘 하면 좋은지
                 "lat": c["lat"],
                 "lng": c["lng"],
             },

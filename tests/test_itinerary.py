@@ -4,7 +4,7 @@
 도착 전 노출 정보(hint/방향/시간)와 reveal 블록(이름 공개)을 나눠서 보여준다.
 (FastAPI 라우터는 아직 만들지 않음 — 동선 생성+join까지만.)
 
-실행: python test_itinerary.py   (레포 루트에서)
+실행: PYTHONPATH=. python tests/test_itinerary.py   (레포 루트에서)
 """
 from pipeline.config import load_config
 from api.itinerary import build_itinerary

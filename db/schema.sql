@@ -26,6 +26,7 @@ create table if not exists places (
   hint          text,
   description   text,
   reveal_text   text,
+  things_to_do  text,                   -- 시장·공원 등: 도착 후 "여기서 뭘 하면 좋은지"(미리 생성)
   moods         text[],
   embedding     vector(1536),          -- config의 embedding.dimensions와 일치해야 함
   status        text not null default 'pending',  -- pending | approved | rejected
@@ -62,12 +63,12 @@ create or replace function match_places(
   target_city text default 'seoul'
 ) returns table (
   id uuid, name text, neighborhood text, category text,
-  hint text, description text, reveal_text text, moods text[],
+  hint text, description text, reveal_text text, things_to_do text, moods text[],
   lat double precision, lng double precision,
   distance_m double precision, similarity double precision
 ) language sql stable as $$
   select p.id, p.name, p.neighborhood, p.category,
-         p.hint, p.description, p.reveal_text, p.moods,
+         p.hint, p.description, p.reveal_text, p.things_to_do, p.moods,
          p.lat, p.lng,
          st_distance(p.location,
            st_setsrid(st_makepoint(user_lng, user_lat), 4326)::geography) as distance_m,

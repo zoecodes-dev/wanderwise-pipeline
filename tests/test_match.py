@@ -4,7 +4,7 @@
 후보가 몇 개 나오는지, 유사도 순으로 맞게 나오는지 출력한다.
 (Claude 동선 구성/ FastAPI 라우터는 아직 만들지 않음 — 여기까지만.)
 
-실행: python test_match.py   (레포 루트에서)
+실행: PYTHONPATH=. python tests/test_match.py   (레포 루트에서)
 """
 from pipeline.config import load_config
 from api.places import find_candidates

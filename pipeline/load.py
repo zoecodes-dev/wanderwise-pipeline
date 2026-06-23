@@ -13,7 +13,7 @@ COLUMNS = [
     "external_id", "source", "name", "display_name", "city", "neighborhood",
     "category", "address", "lat", "lng", "phone", "url", "rating", "review_count",
     "price_level", "opening_hours", "hint", "description", "reveal_text",
-    "moods", "embedding",
+    "things_to_do", "moods", "embedding",
 ]
 
 
