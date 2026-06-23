@@ -20,6 +20,12 @@ env/
 # 파이프라인 중간 산출물 (재실행으로 재생성됨)
 data/*.json
 
+# 확장 배치 임시 청크 폴더 (스크립트가 재생성, 끝나면 삭제)
+data/_*/
+
+# 확장 배치용 생성 설정 (geocode/collect 스크립트가 재생성하는 중간물)
+config/seoul_expand*.yaml
+
 # 테스트 / 커버리지
 .pytest_cache/
 .coverage
