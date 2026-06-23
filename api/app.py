@@ -10,7 +10,10 @@ POST /itinerary: 무드+좌표 → build_itinerary(임베딩→match_places→Cl
 
 실행: uvicorn api.app:app --port 8000
 """
+import textwrap
+
 from fastapi import FastAPI, HTTPException
+from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel, Field
 
 from pipeline.config import load_config
@@ -30,6 +33,27 @@ class ItineraryRequest(BaseModel):
     max_distance_m: float = 5000
     stops: int = Field(default=4, ge=3, le=6)  # 범위 벗어나면 422
     start_time: str = "10:00"
+
+
+@app.get("/")
+def read_root():
+    ascii_art = """
+       .  * .          .      *
+  * .         * .
+    .   ✨  WanderWise  ✨   .
+        .          .       .
+  _  .  .       * .       .
+ / \\ / \\    .      * .
+/   V   \\       .        .
+\\_______/   * .
+  | _ |  _______   .     .
+  | _ | /       \\      *
+  | _ |/  👕 👔  \\  .
+==========================
+  ~~~~ ~~~~ ~~~~ ~~~~ ~~~~
+    WanderWise Hills 🌙
+    """
+    return PlainTextResponse(textwrap.dedent(ascii_art))
 
 
 @app.post("/itinerary")
