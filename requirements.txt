@@ -5,3 +5,4 @@ anthropic>=0.40
 supabase>=2.6
 fastapi>=0.110
 uvicorn>=0.29
+slowapi>=0.1.9

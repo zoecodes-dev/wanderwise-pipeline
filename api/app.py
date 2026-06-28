@@ -12,14 +12,31 @@ POST /itinerary: 무드+좌표 → build_itinerary(임베딩→match_places→Cl
 """
 import textwrap
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel, Field
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.util import get_remote_address
 
 from pipeline.config import load_config
 from .itinerary import build_itinerary
 
+
+def _client_ip(request: Request) -> str:
+    """레이트 리밋 키 — Railway 프록시 뒤라 X-Forwarded-For의 첫 IP(원 클라이언트)를 쓴다."""
+    xff = request.headers.get("x-forwarded-for")
+    if xff:
+        return xff.split(",")[0].strip()
+    return get_remote_address(request)
+
+
+# 공개 엔드포인트라 IP당 호출 제한 — 무단 호출·과금 폭주 방지 (동선 생성은 LLM/임베딩 비용 큼)
+limiter = Limiter(key_func=_client_ip)
+
 app = FastAPI(title="WanderWise Itinerary API")
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 _CFG = load_config("config/seoul.yaml")  # 프로세스 기동 시 1회 로드
 
 _MOOD_MAX = 500  # 초장문 무드는 잘라서 임베딩 (토큰 보호)
@@ -57,7 +74,8 @@ def read_root():
 
 
 @app.post("/itinerary")
-def create_itinerary(req: ItineraryRequest):
+@limiter.limit("10/minute;100/day")
+def create_itinerary(request: Request, req: ItineraryRequest):
     mood = (req.mood or "").strip()
     if not mood:
         raise HTTPException(status_code=400, detail="무드 문장이 비어 있습니다.")
